@@ -1,5 +1,6 @@
 import React, { useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { AppContext } from "../context/AppContext";
 import { Search, ChevronRight, ChevronLeft, CheckCircle2, Star, Sparkles } from "lucide-react";
 
@@ -203,13 +204,31 @@ export default function Profile() {
     if (step === 3) return days.length > 0 && slots.length > 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Transform skill objects to arrays format expected by matches
     const teaches = Object.entries(teachSkills).map(([topic, conf]) => ({ topic, level: conf.level }));
     const learns = Object.entries(learnSkills).map(([topic, conf]) => ({ topic, level: conf.level, urgency: conf.urgency }));
     
-    setMatchData({ name, email, year, teaches, learns, days, slots, mode, avatar: name.charAt(0).toUpperCase() || "S", color: "#3b82f6" });
-    navigate('/matches');
+    try {
+      const payload = { name, email, year, teaches, learns, days, slots, mode };
+      
+      // Hit actual Node.js Backend
+      const response = await axios.post("http://localhost:5000/api/profile", payload);
+      
+      // Update global context
+      setMatchData({ 
+         ...payload, 
+         id: response.data.userId, 
+         avatar: name.charAt(0).toUpperCase() || "S", 
+         color: "#60a5fa" 
+      });
+
+      // Move to matches securely
+      navigate('/matches');
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.error || "Error saving profile. Please try again.");
+    }
   };
 
   return (

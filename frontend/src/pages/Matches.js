@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { AppContext } from "../context/AppContext";
 import { ChevronDown, ChevronUp, Calendar as CalIcon, BookOpen, Heart } from "lucide-react";
 
@@ -78,20 +79,39 @@ export default function Matches() {
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => {
-      let scored = MOCK_USERS.map(u => {
-        const score = scoreMatch(profile, u);
-        let color = "#f59e0b"; // Default Amber
-        if (score >= 80) color = "#02dfb6"; // Teal
-        else if (score >= 65) color = "#0299df"; // Blue
 
-        return { ...u, score, matchColor: color };
-      }).sort((a, b) => b.score - a.score);
-      
-      setMatches(scored);
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    const fetchMatches = async () => {
+      try {
+        if (profile?.id) {
+          // Live Database Call
+          const response = await axios.get(`http://localhost:5000/api/matches?userId=${profile.id}`);
+          // Fallback to MOCK_USERS if DB returns no matches (e.g. testing with 1 user)
+          if (response.data.success && response.data.matches.length > 0) {
+            setMatches(response.data.matches);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback to local scoring if database is empty or error occurs
+        let scored = MOCK_USERS.map(u => {
+          const score = scoreMatch(profile, u);
+          let color = "#fcd34d"; // Default Amber
+          if (score >= 80) color = "#6ee7b7"; // Teal
+          else if (score >= 65) color = "#60a5fa"; // Blue
+          return { ...u, score, matchColor: color };
+        }).sort((a, b) => b.score - a.score);
+        
+        setMatches(scored);
+
+      } catch (err) {
+        console.error("Error fetching matches", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    setTimeout(fetchMatches, 1500); // 1.5s delay to show loading animation
   }, [profile]);
 
   if (loading) {
