@@ -1,28 +1,27 @@
-import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AppProvider } from "./context/AppContext";
+import Navbar from "./components/Navbar";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
+import Matches from "./pages/Matches";
+import Timetable from "./pages/Timetable";
+import Dashboard from "./pages/Dashboard";
 import "./styles.css";
 
 function App() {
-  const [page, setPage] = useState("landing");
-  const [theme, setTheme] = useState("light");
-
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
   return (
-    <div className={theme}>
-      {page === "landing" && (
-        <Landing 
-          goToProfile={() => setPage("profile")} 
-          toggleTheme={toggleTheme}
-          theme={theme}
-        />
-      )}
-
-      {page === "profile" && <Profile />}
-    </div>
+    <AppProvider>
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/timetable" element={<Timetable />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </Router>
+    </AppProvider>
   );
 }
 
