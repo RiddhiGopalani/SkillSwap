@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Calendar, CheckCircle, RefreshCw, Edit3, Clock, BookOpen, Trash2, Plus, Save, X } from "lucide-react";
 
 export default function Timetable() {
@@ -14,30 +15,70 @@ export default function Timetable() {
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => {
-      generateMockSchedule();
-      setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const fetchOrGenerateTimetable = async () => {
+      try {
+        if (!match?.matchId) return;
+        
+        let res = await axios.get(`http://localhost:5000/api/timetable/${match.matchId}`);
+        if (!res.data || res.data.error) {
+           res = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+        }
+        
+        if (res.data?.sessions) {
+            setSchedule(res.data.sessions.map((s, idx) => ({
+                id: idx.toString(),
+                day: s.day,
+                time: s.time,
+                duration: "1 hour", // Simplified for UI
+                topic: s.topic,
+                role: "teach", // Derived loosely for now
+                partner: match.name
+            })));
+        }
+      } catch (err) {
+         if (err.response?.status === 404) {
+             const fallback = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+             if (fallback.data?.sessions) {
+                setSchedule(fallback.data.sessions.map((s, idx) => ({
+                    id: idx.toString(),
+                    day: s.day,
+                    time: s.time,
+                    duration: "1 hour",
+                    topic: s.topic,
+                    role: "teach",
+                    partner: match.name
+                })));
+             }
+         } else {
+             console.error("Timetable generation failed", err);
+         }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrGenerateTimetable();
   }, [match]);
 
-  const generateMockSchedule = () => {
-    if (!match) return;
-    const days = match.days || ["Mon", "Wed", "Fri"];
-    const slots = match.slots || ["Evening (4-7)"];
+  const generateTimetable = async () => {
+      setLoading(true);
+      try {
+          const res = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+          if (res.data?.sessions) {
+              setSchedule(res.data.sessions.map((s, idx) => ({ id: idx.toString(), day: s.day, time: s.time, duration: "1 hour", topic: s.topic, role: "teach", partner: match.name})));
+              setAccepted(false);
+          }
+      } finally {
+          setLoading(false);
+      }
+  };
 
-    const newSchedule = days.map((day, idx) => ({
-      id: Math.random().toString(),
-      day,
-      time: slots[idx % slots.length],
-      duration: "1 hour",
-      topic: idx % 2 === 0 ? match.teaches[0]?.topic : match.learns[0]?.topic,
-      role: idx % 2 === 0 ? "teach" : "learn",
-      partner: match.name
-    }));
-    setSchedule(newSchedule);
-    setAccepted(false);
+  const handleSavePatch = async () => {
+      try {
+          await axios.patch(`http://localhost:5000/api/timetable/${match.matchId}`, {
+              sessions: schedule.map(s => ({ day: s.day, time: s.time, topic: s.topic }))
+          });
+          setIsEditing(false);
+      } catch(err) { console.error(err); }
   };
 
   const handleEditChange = (id, field, value) => {
@@ -88,7 +129,7 @@ export default function Timetable() {
           <div style={{ display: "flex", gap: "12px" }}>
             {!isEditing ? (
               <>
-                <button className="btn-secondary" onClick={() => { setLoading(true); setTimeout(() => { generateMockSchedule(); setLoading(false); }, 800); }} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>
+                <button className="btn-secondary" onClick={generateTimetable} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>
                   <RefreshCw size={18} /> Regenerate
                 </button>
                 <button className="btn-secondary" onClick={() => setIsEditing(true)} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>
@@ -97,10 +138,10 @@ export default function Timetable() {
               </>
             ) : (
               <>
-                <button className="btn-secondary" onClick={() => { generateMockSchedule(); setIsEditing(false); }}>
+                <button className="btn-secondary" onClick={() => { setIsEditing(false); }}>
                   <X size={18} /> Cancel
                 </button>
-                <button className="btn-modern" onClick={() => setIsEditing(false)}>
+                <button className="btn-modern" onClick={handleSavePatch}>
                   <Save size={18} style={{ marginRight: "8px" }} /> Save Changes
                 </button>
               </>

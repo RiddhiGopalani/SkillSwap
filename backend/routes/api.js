@@ -1,175 +1,310 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/db');
+const bcrypt = require('bcryptjs');
+const { getPool } = require('../config/db');
 
 // ==========================================
-// 1. POST /api/profile -> Save user data
+// USERS
 // ==========================================
-router.post('/profile', (req, res) => {
-    const { name, email, year, teaches, learns, days, slots, mode } = req.body;
 
-    if (!name || !email) {
-        return res.status(400).json({ error: "Name and Email are required" });
-    }
-
-    // Insert user
-    db.run(`INSERT INTO Users (name, email, year) VALUES (?, ?, ?)`, [name, email, year || "N/A"], function(err) {
-        if (err) {
-            // If email already exists, might throw a UNIQUE constraint error
-            return res.status(400).json({ error: "Could not create user. Email might already exist." });
-        }
+// Register
+router.post('/users/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const pool = getPool();
         
-        const userId = this.lastID; // The newly generated user ID
-
-        // Insert Teach Skills
-        if (Array.isArray(teaches)) {
-            teaches.forEach(skill => {
-                db.run(`INSERT INTO TeachSkills (user_id, skill_name, level) VALUES (?, ?, ?)`, [userId, skill.topic, skill.level]);
-            });
+        const [existing] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ error: "User already exists" });
         }
 
-        // Insert Learn Skills
-        if (Array.isArray(learns)) {
-            learns.forEach(skill => {
-                db.run(`INSERT INTO LearnSkills (user_id, skill_name, level, urgency) VALUES (?, ?, ?, ?)`, [userId, skill.topic, skill.level, skill.urgency]);
-            });
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        const [result] = await pool.query(
+            'INSERT INTO Users (name, email, passwordHash) VALUES (?, ?, ?)',
+            [name, email, passwordHash]
+        );
+
+        res.status(201).json({ id: result.insertId, name, email, points: 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Login
+router.post('/users/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const pool = getPool();
+        
+        const [users] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        // Insert Availability (crossing days and slots for simplicity)
-        if (Array.isArray(days) && Array.isArray(slots)) {
-            days.forEach(day => {
-                slots.forEach(slot => {
-                    db.run(`INSERT INTO Availability (user_id, day, time_slot, mode) VALUES (?, ?, ?, ?)`, [userId, day, slot, mode || "Online"]);
-                });
-            });
+        const user = users[0];
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        res.json({ success: true, userId, message: "Profile saved successfully!" });
-    });
+        delete user.passwordHash;
+        // Parse JSON for badges if needed
+        if (typeof user.badges === 'string') user.badges = JSON.parse(user.badges);
+
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get User Profile
+router.get('/users/:userId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const [users] = await pool.query('SELECT id, name, email, points, bio, badges, avatar, color FROM Users WHERE id = ?', [req.params.userId]);
+        if (users.length === 0) return res.status(404).json({ error: "User not found" });
+        
+        const user = users[0];
+        if (typeof user.badges === 'string') user.badges = JSON.parse(user.badges);
+        
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ==========================================
-// 2. GET /api/matches -> Return matches 
+// SKILLS
 // ==========================================
-router.get('/matches', (req, res) => {
-    const currentUserId = req.query.userId;
-    
-    if (!currentUserId) {
-        return res.status(400).json({ error: "userId query parameter is required" });
+
+// Add Skill
+router.post('/skills', async (req, res) => {
+    try {
+        const { userId, skillName, type, level } = req.body;
+        const pool = getPool();
+
+        if (type === 'teach') {
+            const [result] = await pool.query('INSERT INTO Skills_Teach (user_id, topic, level) VALUES (?, ?, ?)', [userId, skillName, level]);
+            res.status(201).json({ id: result.insertId, userId, skillName, type, level });
+        } else {
+            // learn -> use urgency instead of level based on schema or just map it
+            const urgency = level; 
+            const [result] = await pool.query('INSERT INTO Skills_Learn (user_id, topic, urgency) VALUES (?, ?, ?)', [userId, skillName, urgency]);
+            res.status(201).json({ id: result.insertId, userId, skillName, type, urgency });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
+});
 
-    // Since this is a basic version, we will fetch the current user's needs,
-    // and fetch all other users to calculate a score manually.
-    
-    db.all(`SELECT * FROM LearnSkills WHERE user_id = ?`, [currentUserId], (err, myLearns) => {
-        if (err || !myLearns) return res.status(500).json({ error: err ? err.message : "Error" });
+// Get User Skills
+router.get('/skills/:userId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const [teaches] = await pool.query('SELECT * FROM Skills_Teach WHERE user_id = ?', [req.params.userId]);
+        const [learns] = await pool.query('SELECT * FROM Skills_Learn WHERE user_id = ?', [req.params.userId]);
         
-        db.all(`SELECT * FROM TeachSkills WHERE user_id = ?`, [currentUserId], (err, myTeaches) => {
-            
-            db.all(`SELECT * FROM Availability WHERE user_id = ?`, [currentUserId], (err, myAvails) => {
-                
-                // Fetch all other users and their data 
-                db.all(`SELECT * FROM Users WHERE id != ?`, [currentUserId], (err, otherUsers) => {
-                    db.all(`SELECT * FROM TeachSkills WHERE user_id != ?`, [currentUserId], (err, allTeach) => {
-                        db.all(`SELECT * FROM LearnSkills WHERE user_id != ?`, [currentUserId], (err, allLearn) => {
-                            db.all(`SELECT * FROM Availability WHERE user_id != ?`, [currentUserId], (err, allAvail) => {
-                                
-                                let matchedProfiles = otherUsers.map(user => {
-                                    let score = 0;
-                                    
-                                    // Extract target user data
-                                    let theirTeaches = allTeach.filter(t => t.user_id === user.id);
-                                    let theirLearns = allLearn.filter(l => l.user_id === user.id);
-                                    let theirAvails = allAvail.filter(a => a.user_id === user.id);
+        // Format to match old Mongoose return structure if needed or just return both
+        const skills = [
+            ...teaches.map(t => ({ id: t.id, userId: t.user_id, skillName: t.topic, type: 'teach', level: t.level })),
+            ...learns.map(l => ({ id: l.id, userId: l.user_id, skillName: l.topic, type: 'learn', level: l.urgency }))
+        ];
+        res.status(200).json(skills);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-                                    // 1. Skill Match Logic (High Weight)
-                                    // Did they teach what I want to learn?
-                                    myLearns.forEach(myL => {
-                                        let match = theirTeaches.find(t => t.skill_name === myL.skill_name);
-                                        if (match) {
-                                            score += 40; // High weight
-                                            // Urgency boost
-                                            if (myL.urgency === "Urgent") score += 15;
-                                            if (myL.urgency === "Moderate") score += 5;
-                                        }
-                                    });
+// Update Skill
+router.put('/skills/:skillId', async (req, res) => {
+    try {
+        // Simplified: since we don't know if teach/learn from ID alone easily without querying both, 
+        // normally we would pass type. Assuming it works for now or try both.
+        const pool = getPool();
+        const { level } = req.body;
+        
+        const [teachRes] = await pool.query('UPDATE Skills_Teach SET level = ? WHERE id = ?', [level, req.params.skillId]);
+        if (teachRes.affectedRows > 0) return res.status(200).json({ message: "Updated" });
 
-                                    // Do I teach what they want to learn?
-                                    myTeaches.forEach(myT => {
-                                        let match = theirLearns.find(l => l.skill_name === myT.skill_name);
-                                        if (match) score += 30; // High weight
-                                    });
+        const [learnRes] = await pool.query('UPDATE Skills_Learn SET urgency = ? WHERE id = ?', [level, req.params.skillId]);
+        if (learnRes.affectedRows > 0) return res.status(200).json({ message: "Updated" });
+        
+        res.status(404).json({ error: "Skill not found" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-                                    // 2. Availability Overlap (Medium Weight)
-                                    let overlapDays = 0;
-                                    myAvails.forEach(myA => {
-                                        let overlap = theirAvails.find(a => a.day === myA.day && a.time_slot === myA.time_slot);
-                                        if (overlap) overlapDays++;
-                                    });
-                                    score += (overlapDays * 10); // Medium weight per overlapping slot
-                                    
-                                    // Formatting final object to match frontend expectations
-                                    let matchColor = "#60a5fa"; // Def blue
-                                    if (score > 60) matchColor = "#34d399"; // Green
+// Delete Skill
+router.delete('/skills/:skillId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const [teachRes] = await pool.query('DELETE FROM Skills_Teach WHERE id = ?', [req.params.skillId]);
+        if (teachRes.affectedRows > 0) return res.status(200).json({ message: "Skill deleted" });
 
-                                    return {
-                                        id: user.id,
-                                        name: user.name,
-                                        avatar: user.name.charAt(0).toUpperCase() || "S",
-                                        color: matchColor,
-                                        score: Math.min(score, 99), // Cap at 99%
-                                        teaches: theirTeaches.map(t => ({ topic: t.skill_name, level: t.level })),
-                                        learns: theirLearns.map(l => ({ topic: l.skill_name, level: l.level, urgency: l.urgency })),
-                                        days: [...new Set(theirAvails.map(a => a.day))],
-                                        slots: [...new Set(theirAvails.map(a => a.time_slot))],
-                                        mode: theirAvails.length > 0 ? theirAvails[0].mode : "Online"
-                                    };
-                                });
-                                
-                                // Return top matches (3-5 items) sorted by highest score
-                                matchedProfiles = matchedProfiles.filter(p => p.score > 0).sort((a,b) => b.score - a.score).slice(0, 5);
-                                
-                                res.json({ success: true, matches: matchedProfiles });
-                            });
-                        });
-                    });
-                });
-            });
+        const [learnRes] = await pool.query('DELETE FROM Skills_Learn WHERE id = ?', [req.params.skillId]);
+        if (learnRes.affectedRows > 0) return res.status(200).json({ message: "Skill deleted" });
+        
+        res.status(404).json({ error: "Skill not found" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// AVAILABILITY
+// ==========================================
+
+// Add Availability
+router.post('/availability', async (req, res) => {
+    try {
+        const { userId, day, startTime, endTime } = req.body;
+        const pool = getPool();
+        const time_slot = `${startTime}-${endTime}`; // Combining as per schema
+        
+        const [result] = await pool.query('INSERT INTO Availability (user_id, day, time_slot) VALUES (?, ?, ?)', [userId, day, time_slot]);
+        res.status(201).json({ id: result.insertId, userId, day, startTime, endTime });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get User Availability
+router.get('/availability/:userId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const [avail] = await pool.query('SELECT * FROM Availability WHERE user_id = ?', [req.params.userId]);
+        
+        // Map back to expected structure
+        const formatted = avail.map(a => {
+            const [startTime, endTime] = (a.time_slot || '-').split('-');
+            return { id: a.id, userId: a.user_id, day: a.day, startTime, endTime };
         });
-    });
-});
-
-// ==========================================
-// 3. POST /api/timetable -> Save timetable
-// ==========================================
-router.post('/timetable', (req, res) => {
-    const { match_id, scheduleList } = req.body;
-    
-    if (!match_id || !scheduleList) {
-        return res.status(400).json({ error: "Missing match_id or schedule data" });
+        
+        res.status(200).json(formatted);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    scheduleList.forEach(slot => {
-        db.run(`INSERT INTO Timetable (match_id, day, time, duration) VALUES (?, ?, ?, ?)`, 
-               [match_id, slot.day, slot.time, slot.duration]);
-    });
-
-    res.json({ success: true, message: "Timetable saved successfully!" });
 });
 
-// ==========================================
-// 4. GET /api/dashboard -> Return user data
-// ==========================================
-router.get('/dashboard', (req, res) => {
-    // For now, we return basic mock data structure
-    res.json({
-        success: true,
-        upcoming: [
-            { id: 1, name: "Arjun Kapoor", topic: "Machine Learning", time: "Today at 7PM" }
-        ],
-        past: [],
-        connections: []
-    });
+// Update Availability
+router.put('/availability/:availabilityId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const { day, startTime, endTime } = req.body;
+        const time_slot = `${startTime}-${endTime}`;
+        
+        const [result] = await pool.query('UPDATE Availability SET day = ?, time_slot = ? WHERE id = ?', [day, time_slot, req.params.availabilityId]);
+        if (result.affectedRows === 0) return res.status(404).json({ error: "Availability not found" });
+        
+        res.status(200).json({ message: "Updated" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
+
+// Delete Availability
+router.delete('/availability/:availabilityId', async (req, res) => {
+    try {
+        const pool = getPool();
+        const [result] = await pool.query('DELETE FROM Availability WHERE id = ?', [req.params.availabilityId]);
+        if (result.affectedRows === 0) return res.status(404).json({ error: "Availability not found" });
+        
+        res.status(200).json({ message: "Availability deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update Full Profile (Smart Diffing)
+router.put('/users/:userId/profile', async (req, res) => {
+    try {
+        const pool = getPool();
+        const userId = req.params.userId;
+        const { name, email, teaches, learns, days, slots } = req.body;
+
+        // 1. Update basic info
+        await pool.query('UPDATE Users SET name = ?, email = ? WHERE id = ?', [name, email, userId]);
+
+        // 2. Update Teaches (Diffing)
+        const [existingTeaches] = await pool.query('SELECT * FROM Skills_Teach WHERE user_id = ?', [userId]);
+        const existingTeachTopics = existingTeaches.map(t => t.topic);
+        const newTeachTopics = teaches.map(t => t.topic);
+
+        // Add missing
+        for (const t of teaches) {
+            if (!existingTeachTopics.includes(t.topic)) {
+                await pool.query('INSERT INTO Skills_Teach (user_id, topic, level) VALUES (?, ?, ?)', [userId, t.topic, t.level]);
+            } else {
+                // Update level if changed
+                await pool.query('UPDATE Skills_Teach SET level = ? WHERE user_id = ? AND topic = ?', [t.level, userId, t.topic]);
+            }
+        }
+        // Remove deleted
+        for (const t of existingTeaches) {
+            if (!newTeachTopics.includes(t.topic)) {
+                await pool.query('DELETE FROM Skills_Teach WHERE id = ?', [t.id]);
+            }
+        }
+
+        // 3. Update Learns (Diffing)
+        const [existingLearns] = await pool.query('SELECT * FROM Skills_Learn WHERE user_id = ?', [userId]);
+        const existingLearnTopics = existingLearns.map(t => t.topic);
+        const newLearnTopics = learns.map(t => t.topic);
+
+        for (const l of learns) {
+            if (!existingLearnTopics.includes(l.topic)) {
+                await pool.query('INSERT INTO Skills_Learn (user_id, topic, urgency) VALUES (?, ?, ?)', [userId, l.topic, l.urgency]);
+            } else {
+                await pool.query('UPDATE Skills_Learn SET urgency = ? WHERE user_id = ? AND topic = ?', [l.urgency, userId, l.topic]);
+            }
+        }
+        for (const l of existingLearns) {
+            if (!newLearnTopics.includes(l.topic)) {
+                await pool.query('DELETE FROM Skills_Learn WHERE id = ?', [l.id]);
+            }
+        }
+
+        // 4. Update Availability (Diffing)
+        const [existingAvails] = await pool.query('SELECT * FROM Availability WHERE user_id = ?', [userId]);
+        const existingAvailStrings = existingAvails.map(a => `${a.day}_${a.time_slot}`);
+        
+        const newAvailStrings = [];
+        for (const d of days) {
+            for (const s of slots) {
+                const times = s.match(/\((.*?)\)/)?.[1];
+                if (times) {
+                    const [start, end] = times.split('-');
+                    newAvailStrings.push(`${d}_${start}-${end}`);
+                }
+            }
+        }
+
+        // Add missing
+        for (const av of newAvailStrings) {
+            if (!existingAvailStrings.includes(av)) {
+                const [day, time_slot] = av.split('_');
+                await pool.query('INSERT INTO Availability (user_id, day, time_slot) VALUES (?, ?, ?)', [userId, day, time_slot]);
+            }
+        }
+        // Remove deleted
+        for (const a of existingAvails) {
+            if (!newAvailStrings.includes(`${a.day}_${a.time_slot}`)) {
+                await pool.query('DELETE FROM Availability WHERE id = ?', [a.id]);
+            }
+        }
+
+        res.status(200).json({ success: true, message: "Profile updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.use('/matches', require('./match'));
+router.use('/timetable', require('./timetable'));
+router.use('/rewards', require('./reward'));
+router.use('/messages', require('./message'));
 
 module.exports = router;

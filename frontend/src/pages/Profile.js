@@ -2,15 +2,25 @@ import React, { useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AppContext } from "../context/AppContext";
-import { Search, ChevronRight, ChevronLeft, CheckCircle2, Star, Sparkles } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, CheckCircle2, Star, Sparkles, X } from "lucide-react";
 
 // Categorized Skills Data
 const SKILL_CATEGORIES = [
-  { name: "Tech", icon: "💻", skills: ["Python", "JavaScript", "React", "SQL", "C++", "Java", "Node.js", "Machine Learning", "DSA", "Web Dev", "App Dev"] },
-  { name: "Creative", icon: "🎨", skills: ["Figma", "UI/UX Design", "Graphic Design", "Photoshop", "Video Editing", "Canva", "Music", "Dance"] },
-  { name: "Soft Skills", icon: "🤝", skills: ["Public Speaking", "Resume Building", "Interview Prep", "Leadership", "Communication"] },
-  { name: "Academics", icon: "📚", skills: ["Statistics", "Math", "Physics", "Data Analysis", "Biology", "Economics"] },
-  { name: "Misc", icon: "🎾", skills: ["Fitness", "Languages", "Photography", "Chess", "Cooking", "Personal Finance"] }
+  { 
+    name: "Academic Skills", 
+    icon: "📘", 
+    skills: ["Mathematics", "Physics", "Chemistry", "Biology", "Python", "Java", "React", "Machine Learning", "Economics", "Statistics", "History", "Psychology", "Finance", "Accounting", "Marketing", "Law", "Geography", "Literature", "English", "Spanish", "French", "German", "Mandarin", "Latin", "Philosophy", "Sociology", "Political Science", "Anatomy", "Physiology", "Biochemistry", "Genetics", "Microbiology", "Ecology", "Zoology", "Botany", "Astronomy", "Earth Science", "Geology", "Environmental Science", "Computer Architecture", "Data Structures", "Algorithms", "Operating Systems", "Computer Networks", "Database Management", "Software Engineering", "Artificial Intelligence", "Cybersecurity", "Cryptography", "Blockchain", "Cloud Computing", "Web Development", "Mobile Development", "Game Development", "UI/UX Design", "Data Science", "Big Data", "Natural Language Processing", "Computer Vision", "Robotics", "Control Systems", "Signal Processing", "Thermodynamics", "Fluid Mechanics", "Solid Mechanics", "Materials Science", "Structural Engineering", "Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Chemical Engineering", "Aerospace Engineering", "Biomedical Engineering", "Industrial Engineering", "Systems Engineering", "Nuclear Engineering", "Marine Engineering", "Petroleum Engineering", "Agriculture", "Forestry", "Veterinary Medicine", "Dentistry", "Pharmacy", "Nursing", "Public Health", "Nutrition", "Kinesiology", "Sports Science", "Physical Therapy", "Occupational Therapy", "Speech Therapy", "Audiology", "Optometry", "Podiatry", "Chiropractic", "Osteopathy", "Alternative Medicine", "Acupuncture", "Homeopathy", "Naturopathy"]
+  },
+  { 
+    name: "Creative / Extracurricular", 
+    icon: "🎨", 
+    skills: ["Guitar", "Singing", "Dance", "Photography", "Graphic Design", "Tarot Card Reading", "Video Editing", "Public Speaking", "Writing", "Acting", "DJing", "Animation", "Painting", "Drawing", "Sketching", "Sculpting", "Pottery", "Ceramics", "Woodworking", "Metalworking", "Glassblowing", "Jewelry Making", "Knitting", "Crochet", "Sewing", "Embroidery", "Quilting", "Weaving", "Macrame", "Origami", "Papercraft", "Scrapbooking", "Calligraphy", "Typography", "Lettering", "Printmaking", "Screen Printing", "Bookbinding", "Leatherworking", "Basketry", "Floral Design", "Gardening", "Landscaping", "Bonsai", "Aquascaping", "Terrarium Making", "Baking", "Pastry Making", "Cake Decorating", "Chocolatiering", "Mixology", "Bartending", "Barista", "Coffee Roasting", "Tea Blending", "Wine Tasting", "Brewing", "Distilling", "Magic Tricks", "Illusion", "Juggling", "Unicycling", "Stilt Walking", "Fire Spinning", "Poi", "Hula Hooping", "Aerial Silks", "Trapeze", "Acrobatics", "Gymnastics", "Parkour", "Freerunning", "Skateboarding", "Roller Skating", "Ice Skating", "Snowboarding", "Skiing", "Surfing", "Paddleboarding", "Kayaking", "Canoeing", "Rowing", "Sailing", "Windsurfing", "Kiteboarding", "Wakeboarding", "Water Skiing", "Scuba Diving", "Snorkeling", "Free Diving", "Spearfishing", "Fishing", "Fly Fishing", "Hunting", "Archery", "Target Shooting", "Clay Pigeon Shooting", "Paintball", "Airsoft", "Laser Tag", "Escape Rooms", "Board Games", "Tabletop RPGs", "Trading Card Games", "Video Gaming", "Esports", "Streaming", "Podcasting", "Vlogging", "Blogging"]
+  },
+  { 
+    name: "Sports / Lifestyle", 
+    icon: "⚽", 
+    skills: ["Football", "Cricket", "Gym Training", "Yoga", "Chess", "Swimming", "Meditation", "Nutrition", "Trekking", "Skating", "Basketball", "Baseball", "Softball", "Volleyball", "Tennis", "Table Tennis", "Badminton", "Squash", "Racquetball", "Handball", "Water Polo", "Field Hockey", "Ice Hockey", "Lacrosse", "Rugby", "American Football", "Australian Rules Football", "Gaelic Football", "Hurling", "Polo", "Equestrian", "Horse Riding", "Show Jumping", "Dressage", "Eventing", "Rodeo", "Bull Riding", "Barrel Racing", "Roping", "Cutting", "Reining", "Vaulting", "Driving", "Endurance Riding", "Hiking", "Backpacking", "Mountaineering", "Rock Climbing", "Bouldering", "Ice Climbing", "Alpinism", "Caving", "Spelunking", "Canyoning", "Orienteering", "Geocaching", "Survival Skills", "Bushcraft", "Foraging", "Tracking", "Camping", "Glamping", "RVing", "Vanlife", "Overlanding", "Road Tripping", "Motorcycling", "Bicycling", "Mountain Biking", "Road Cycling", "BMX", "Cyclocross", "Track Cycling", "Triathlon", "Duathlon", "Aquathlon", "Pentathlon", "Decathlon", "Heptathlon", "Athletics", "Track and Field", "Cross Country Running", "Marathon", "Half Marathon", "Ultramarathon", "Trail Running", "Fell Running", "Powerlifting", "Weightlifting", "Bodybuilding", "Strongman", "CrossFit", "Calisthenics", "Trampolining", "Tumbling", "Cheerleading", "Ballet", "Jazz", "Tap", "Hip Hop", "Contemporary", "Modern", "Ballroom", "Latin", "Swing", "Salsa", "Bachata", "Merengue", "Tango", "Flamenco", "Belly Dance", "Bollywood", "Bhangra", "Folk Dance", "Line Dance", "Square Dance"]
+  }
 ];
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
@@ -102,38 +112,80 @@ const CategorizedSelect = ({ selectedSkills, onToggleSkill, onUpdateSkillConfig,
             </div>
           </div>
         )}
+        <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: "12px", border: "1px dashed var(--border-color)", marginTop: "20px" }}>
+          <p style={{ marginBottom: "12px" }}>Can't find a skill?</p>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+              <input 
+                type="text" 
+                placeholder="Add custom skill..." 
+                className="profile-input" 
+                style={{ width: "200px", padding: "8px 12px" }}
+                value={customSkill}
+                onChange={e => setCustomSkill(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && customSkill.trim()) {
+                    onToggleSkill(customSkill.trim());
+                    setCustomSkill("");
+                  }
+                }}
+              />
+              <button 
+                className="btn-primary" 
+                style={{ padding: "8px 16px" }}
+                onClick={() => {
+                  if (customSkill.trim()) {
+                    onToggleSkill(customSkill.trim());
+                    setCustomSkill("");
+                  }
+                }}
+              >Add</button>
+          </div>
+        </div>
       </div>
 
       {Object.keys(selectedSkills).length > 0 && (
         <div style={{ marginTop: "30px", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
           <h4 style={{ marginBottom: "16px", color: "var(--text-main)" }}>Set your details</h4>
           {Object.entries(selectedSkills).map(([skill, config]) => (
-             <div key={skill} style={{ display: "flex", flexDirection: "column", gap: "12px", background: "var(--bg-color)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color)", marginBottom: "16px" }}>
-               <div style={{ fontWeight: "600", fontSize: "1.05rem", color: "var(--primary-color)" }}>{skill}</div>
+             <div key={skill} style={{ display: "flex", flexDirection: "column", gap: "12px", background: "var(--bg-card)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color)", marginBottom: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                 <div style={{ fontWeight: "600", fontSize: "1.1rem", color: "var(--primary-color)" }}>{skill}</div>
+                 <button 
+                   onClick={() => onToggleSkill(skill)}
+                   style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", borderRadius: "50%", transition: "var(--transition)" }}
+                   onMouseOver={(e) => { e.currentTarget.style.color = "red"; e.currentTarget.style.background = "rgba(255,0,0,0.1)"; }}
+                   onMouseOut={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                   title="Remove Skill"
+                 >
+                   <X size={18} />
+                 </button>
+               </div>
                
-               <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-                 <div>
-                   <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "6px" }}>Your Level:</div>
-                   <div className="level-pills">
+               <div style={{ display: "flex", flexWrap: "wrap", gap: "24px" }}>
+                 <div style={{ flex: "1", minWidth: "200px" }}>
+                   <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "8px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Level</div>
+                   <div className="level-pills" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                      {LEVELS.map(l => (
                        <button 
                          key={l}
                          className={`level-pill ${config.level === l ? (isLearnMode ? "level-active-learn" : "level-active-teach") : ""}`}
                          onClick={() => onUpdateSkillConfig(skill, "level", l)}
+                         style={{ flex: "1", textAlign: "center", minWidth: "80px", padding: "8px 12px", fontSize: "0.9rem" }}
                        >{l}</button>
                      ))}
                    </div>
                  </div>
 
                  {isLearnMode && (
-                   <div>
-                     <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "6px" }}>Urgency:</div>
-                     <div className="level-pills">
+                   <div style={{ flex: "1", minWidth: "200px" }}>
+                     <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "8px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>Urgency</div>
+                     <div className="level-pills" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                        {URGENCY.map(u => (
                          <button 
                            key={u}
                            className={`level-pill urgency-pill ${config.urgency === u ? `urgency-active-${u.toLowerCase()}` : ""}`}
                            onClick={() => onUpdateSkillConfig(skill, "urgency", u)}
+                           style={{ flex: "1", textAlign: "center", minWidth: "80px", padding: "8px 12px", fontSize: "0.9rem" }}
                          >{u}</button>
                        ))}
                      </div>
@@ -150,13 +202,14 @@ const CategorizedSelect = ({ selectedSkills, onToggleSkill, onUpdateSkillConfig,
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { setMatchData } = useContext(AppContext);
+  const { matchData: profile, setMatchData } = useContext(AppContext);
   const [step, setStep] = useState(0);
 
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [year, setYear] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
   
   const [teachSkills, setTeachSkills] = useState({}); // { topic: { level } }
   const [learnSkills, setLearnSkills] = useState({}); // { topic: { level, urgency } }
@@ -164,6 +217,55 @@ export default function Profile() {
   const [days, setDays] = useState([]);
   const [slots, setSlots] = useState([]);
   const [mode, setMode] = useState("Online");
+
+  // Load existing profile if available
+  React.useEffect(() => {
+      if (profile?.id) {
+          setIsEditMode(true);
+          setStep(0); // Optional: they can start at step 0 to review
+
+          const fetchProfile = async () => {
+              try {
+                  const userRes = await axios.get(`http://localhost:5000/api/users/${profile.id}`);
+                  if (userRes.data) {
+                      setName(userRes.data.name || "");
+                      setEmail(userRes.data.email || "");
+                  }
+
+                  const skillsRes = await axios.get(`http://localhost:5000/api/skills/${profile.id}`);
+                  if (skillsRes.data) {
+                      const tSkills = {};
+                      const lSkills = {};
+                      skillsRes.data.forEach(s => {
+                          if (s.type === 'teach') tSkills[s.skillName] = { level: s.level };
+                          if (s.type === 'learn') lSkills[s.skillName] = { level: 'Beginner', urgency: s.level || 'Moderate' };
+                      });
+                      setTeachSkills(tSkills);
+                      setLearnSkills(lSkills);
+                  }
+
+                  const availRes = await axios.get(`http://localhost:5000/api/availability/${profile.id}`);
+                  if (availRes.data) {
+                      const d = new Set();
+                      const s = new Set();
+                      availRes.data.forEach(a => {
+                          d.add(a.day);
+                          // Reconstruct slot string from start-end
+                          // Mapping logic back to UI string is tricky, let's map known slots
+                          const start = a.startTime;
+                          const mappedSlot = SLOTS.find(slot => slot.includes(start)) || "Morning (7-10)";
+                          s.add(mappedSlot);
+                      });
+                      setDays(Array.from(d));
+                      setSlots(Array.from(s));
+                  }
+              } catch (err) {
+                  console.error("Failed to load profile", err);
+              }
+          };
+          fetchProfile();
+      }
+  }, [profile]);
 
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -210,20 +312,60 @@ export default function Profile() {
     const learns = Object.entries(learnSkills).map(([topic, conf]) => ({ topic, level: conf.level, urgency: conf.urgency }));
     
     try {
-      const payload = { name, email, year, teaches, learns, days, slots, mode };
-      
-      // Hit actual Node.js Backend
-      const response = await axios.post("http://localhost:5000/api/profile", payload);
-      
+      let userId;
+
+      if (isEditMode) {
+          userId = profile.id;
+          await axios.put(`http://localhost:5000/api/users/${userId}/profile`, {
+              name, email, teaches, learns, days, slots
+          });
+          
+          // Reward +2 for editing/completing profile
+          try {
+             await axios.post('http://localhost:5000/api/rewards/award', { userId, reason: 'profile_completed' });
+          } catch(e) {}
+      } else {
+          // 1. Get or Create User
+          let userRes;
+          try {
+              userRes = await axios.post("http://localhost:5000/api/users/register", { name, email, password: "password123" });
+          } catch (err) {
+              userRes = await axios.post("http://localhost:5000/api/users/login", { email, password: "password123" });
+          }
+          userId = userRes.data.id;
+
+          // 2. Post Skills
+          for (const t of teaches) {
+              await axios.post("http://localhost:5000/api/skills", { userId, skillName: t.topic, type: 'teach', level: t.level });
+          }
+          for (const l of learns) {
+              await axios.post("http://localhost:5000/api/skills", { userId, skillName: l.topic, type: 'learn', level: l.level });
+          }
+
+          // 3. Post Availabilities
+          for (const d of days) {
+              for (const s of slots) {
+                  const times = s.match(/\((.*?)\)/)?.[1];
+                  if (times) {
+                      const [start, end] = times.split('-');
+                      await axios.post("http://localhost:5000/api/availability", { userId, day: d, startTime: start, endTime: end });
+                  }
+              }
+          }
+      }
+
+      // 4. Trigger Real Match Generation
+      await axios.post(`http://localhost:5000/api/matches/generate/${userId}`);
+
       // Update global context
       setMatchData({ 
-         ...payload, 
-         id: response.data.userId, 
+         id: userId,
+         name,
          avatar: name.charAt(0).toUpperCase() || "S", 
          color: "#60a5fa" 
       });
 
-      // Move to matches securely
+      // Move to matches
       navigate('/matches');
     } catch (error) {
       console.error(error);
@@ -253,8 +395,8 @@ export default function Profile() {
         {/* Step 0: Basic Info */}
         {step === 0 && (
           <div className="profile-card animate-in">
-            <h2 style={{ fontSize: "2rem", marginBottom: "10px" }} className="text-gradient-1">Welcome to SkillSwap!</h2>
-            <p className="profile-sub" style={{ fontSize: "1.1rem" }}>Let's get to know you before we find your perfect study partners.</p>
+            <h2 style={{ fontSize: "2rem", marginBottom: "10px" }} className="text-gradient-1">{isEditMode ? "Update Your Profile" : "Welcome to SkillSwap!"}</h2>
+            <p className="profile-sub" style={{ fontSize: "1.1rem" }}>{isEditMode ? "Keep your details fresh to find the best study partners." : "Let's get to know you before we find your perfect study partners."}</p>
 
             <div className="form-group" style={{ marginTop: "30px" }}>
               <label>What's your name? <span style={{ color: "red" }}>*</span></label>
@@ -377,7 +519,7 @@ export default function Profile() {
               disabled={!canNext()}
               onClick={handleSubmit}
             >
-              Find my matches <Sparkles size={18} />
+              {isEditMode ? "Save Changes" : "Find my matches"} <Sparkles size={18} />
             </button>
           )}
         </div>
