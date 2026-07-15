@@ -263,6 +263,4 @@ Released under the MIT License.
 
 **Connecting Students Through Skills.**
 
-*Team SkillSwap · PICT Pune · CEP*
-
 </div>
