@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, Star, ArrowRight, Heart, Sparkles, MessageCircle, Map } from "lucide-react";
-import heroBg from "../assets/hero_bg.png";
 
 function Landing() {
   const navigate = useNavigate();
@@ -9,7 +8,7 @@ function Landing() {
     <div style={{ paddingTop: "70px" }}>
       {/* HERO SECTION */}
       <div className="hero" style={{ 
-        backgroundImage: `linear-gradient(var(--bg-overlay), var(--bg-color)), url(${heroBg})`,
+        background: `radial-gradient(circle at 20% 30%, rgba(175, 173, 254, 0.18) 0%, transparent 45%), radial-gradient(circle at 80% 70%, rgba(2, 153, 223, 0.15) 0%, transparent 55%), var(--bg-color)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
