@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- SocketIO Client CDN -->
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+<div style="min-height: 100vh; padding-top: 80px; background: var(--bg-color);">
+  <div class="container" style="max-width: 1100px; margin: 0 auto; padding: 0 20px 60px;">
+    
+    <!-- HEADER ROW -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <h1 class="text-gradient-1" style="font-size: 2.5rem; margin-bottom: 8px; font-weight: 700;">Your Dashboard</h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem;">Welcome back, {{ current_user.name }}!</p>
+      </div>
+      
+      <div style="display: flex; gap: 20px; align-items: center;">
+         <!-- Points Display -->
+         <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px 24px; border-radius: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm); min-width: 220px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="award" style="color: #fcd34d; width: 28px; height: 28px;"></i>
+                <div>
+                   <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Total Points</div>
+                   <div style="font-size: 1.4rem; font-weight: bold; color: var(--text-main);" id="points-value">0</div>
+                </div>
+            </div>
+            <div style="background: var(--bg-color); height: 6px; border-radius: 3px; width: 100%; overflow: hidden;">
+                <div id="points-progress-bar" style="background: linear-gradient(90deg, #a2df02, #02dfb6); height: 100%; width: 0%; transition: width 1s ease;"></div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-align: right;" id="points-needed-label">50 pts to next badge</div>
+         </div>
+         <a href="{{ url_for('main.matches') }}" class="btn-modern" style="text-decoration: none; display: inline-block;">+ New Match</a>
+      </div>
+    </div>
+
+    <!-- BADGES CONTAINER -->
+    <div id="badges-container" style="display: none; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center;">Your Badges:</span>
+        <div id="badges-list" style="display: flex; gap: 12px; flex-wrap: wrap;"></div>
+    </div>
+
+    <!-- MAIN DASHBOARD COLS -->
+    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 30px; align-items: start; transition: var(--transition);" id="dashboard-grid-layout">
+      
+      <!-- MAIN FEED COLUMN -->
+      <div id="main-feed-column" style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- CHAT INTERFACE (HIDDEN BY DEFAULT) -->
+        <div id="chat-interface-panel" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; flex-direction: column; height: 600px; box-shadow: var(--shadow-md); overflow: hidden;" class="animate-in">
+          <!-- Chat Header -->
+          <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 16px; background: var(--bg-card-hover);">
+            <button style="background: none; border: none; cursor: pointer; color: var(--text-muted);" onclick="closeChat()">
+              <i data-lucide="arrow-left" style="width: 24px; height: 24px;"></i>
+            </button>
+            <div id="chat-partner-avatar" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; color: white;">
+              P
+            </div>
+            <div>
+              <h3 style="font-size: 1.2rem; font-weight: 700;" id="chat-partner-name">Partner Name</h3>
+              <p style="color: var(--primary-color); font-size: 0.85rem; font-weight: 600;">Connected securely via Socket.io</p>
+            </div>
+          </div>
+
+          <!-- Chat History -->
+          <div id="chat-messages-history" style="flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: var(--bg-color);">
+            <!-- Messages go here -->
+          </div>
+
+          <!-- Chat Form -->
+          <form id="chat-message-form" style="padding: 20px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; background: var(--bg-card);" onsubmit="sendMessage(event)">
+            <input type="text" placeholder="Type a message..." class="profile-input" style="flex: 1;" id="chat-text-input">
+            <button type="submit" class="btn-modern" style="padding: 0 24px; border-radius: 8px;">
+              <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- TABS COLUMN (SHOWN BY DEFAULT) -->
+        <div id="tabs-interface-panel" style="display: flex; flex-direction: column; gap: 24px;">
+          <div style="display: flex; gap: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <button id="tab-btn-upcoming" class="tab-btn" onclick="switchTab('upcoming')" style="background: none; border: none; font-size: 1.1rem; font-weight: 600; color: var(--primary-color); padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); cursor: pointer;">
+              Upcoming Sessions
+            </button>
+            <button id="tab-btn-past" class="tab-btn" onclick="switchTab('past')" style="background: none; border: none; font-size: 1.1rem; font-weight: 600; color: var(--text-muted); padding-bottom: 8px; border-bottom: 2px solid transparent; cursor: pointer;">
+              Past Sessions
+            </button>
+          </div>
+
+          <!-- Upcoming Tab Panel -->
+          <div id="tab-panel-upcoming" style="display: flex; flex-direction: column; gap: 16px;">
+             <!-- Sessions list -->
+          </div>
+
+          <!-- Past Tab Panel -->
+          <div id="tab-panel-past" style="display: none; text-align: center; padding: 40px; color: var(--text-muted);">
+             No past sessions found.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SIDEBAR -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 20px;">Connections</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;" id="sidebar-connections-list">
+              <!-- Connections list dynamically loaded -->
+            </div>
+         </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const currentUserId = {{ current_user.id }};
+  let activeChatId = null;
+  let activeUser = null;
+  let socket = null;
+  let connections = [];
+  let sessions = [];
+  let currentTab = "upcoming";
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadDashboardData();
+    initializeSocket();
+  });
+
+  async function loadDashboardData() {
+    try {
+      const res = await fetch('/api/dashboard/data');
+      const data = await res.json();
+      
+      // Update points / badges
+      const rewards = data.rewards;
+      document.getElementById('points-value').innerText = rewards.points;
+      document.getElementById('points-progress-bar').style.width = `${Math.min(100, (rewards.points % 50) * 2)}%`;
+      document.getElementById('points-needed-label').innerText = `${50 - (rewards.points % 50)} pts to next badge`;
+
+      if (rewards.badges.length > 0) {
+        document.getElementById('badges-container').style.display = 'flex';
+        document.getElementById('badges-list').innerHTML = rewards.badges.map(b => `
+          <span style="background: rgba(252, 211, 77, 0.1); color: #d97706; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; display: flex; align-items: center; gap: 6px;"><i data-lucide="award" style="width: 14px; height: 14px;"></i> ${b}</span>
+        `).join('');
+      } else {
+        document.getElementById('badges-container').style.display = 'none';
+      }
+
+      // Connections
+      connections = data.connections;
+      renderConnections();
+
+      // Sessions
+      sessions = data.sessions;
+      renderSessions();
+
+      lucide.createIcons();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function renderConnections() {
+    const list = document.getElementById('sidebar-connections-list');
+    if (connections.length === 0) {
+      list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">No active matches yet.</p>`;
+      return;
+    }
+
+    list.innerHTML = connections.map(conn => {
+      const isActive = activeChatId === conn.matchId;
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 12px; border-radius: 12px; transition: var(--transition); background: ${isActive ? "var(--bg-color)" : "transparent"}; border: ${isActive ? "1px solid var(--primary-color)" : "1px solid transparent"};" 
+             class="hover-highlight"
+             onclick="openChat(${conn.matchId}, ${JSON.stringify(conn).replace(/"/g, '&quot;')})">
+          <div style="display: flex; gap: 12px; align-items: center;">
+             <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, ${conn.color}33, ${conn.color}11); color: ${conn.color}; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold;">
+               ${conn.avatar}
+             </div>
+             <span style="font-weight: 600; font-size: 1rem;">${conn.name}</span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <i data-lucide="message-circle" style="color: ${isActive ? "var(--primary-color)" : "var(--text-muted)"}; width: 18px; height: 18px;"></i>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderSessions() {
+    const panel = document.getElementById('tab-panel-upcoming');
+    if (sessions.length === 0) {
+      panel.innerHTML = `
+        <div style="text-align: center; padding: 60px 40px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
+            <i data-lucide="calendar" style="color: var(--text-muted); margin-bottom: 16px; opacity: 0.5; width: 48px; height: 48px;"></i>
+            <h3 style="font-size: 1.2rem; margin-bottom: 8px; color: var(--text-main);">No upcoming sessions</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">You haven't scheduled any sessions yet. Open a match and generate a timetable!</p>
+        </div>
+      `;
+      return;
+    }
+
+    panel.innerHTML = sessions.map(session => `
+      <div class="animate-in" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); flex-wrap: wrap; gap: 20px;">
+          <div style="display: flex; gap: 20px; align-items: center;">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, ${session.partnerColor}33, ${session.partnerColor}11); color: ${session.partnerColor}; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
+                ${session.partnerAvatar}
+            </div>
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 4px;">${session.topic}</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">with <span style="font-weight: 600; color: var(--text-main);">${session.partnerName}</span></p>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+            <div style="text-align: right;">
+                <div style="display: flex; align-items: center; gap: 6px; color: var(--text-main); font-weight: 600; margin-bottom: 4px; justify-content: flex-end;">
+                  <i data-lucide="calendar" style="color: var(--primary-color); width: 16px; height: 16px;"></i>
+                  ${session.day}s at ${session.time}
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" style="padding: 10px 16px; display: flex; gap: 8px; align-items: center; background: none;">
+                    Join <i data-lucide="video" style="width: 16px; height: 16px;"></i>
+                </button>
+                <button class="btn-modern" onclick="completeSession()" style="padding: 10px 16px; display: flex; gap: 8px; align-items: center; background: var(--accent-learn); color: #064e3b; border: none;">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Complete
+                </button>
+            </div>
+          </div>
+      </div>
+    `).join('');
+  }
+
+  function initializeSocket() {
+    socket = io();
+
+    socket.on('receive_message', (msg) => {
+      if (msg.matchId === activeChatId) {
+        appendMessage(msg);
+      }
+    });
+  }
+
+  window.openChat = async function(matchId, connUser) {
+    activeChatId = matchId;
+    activeUser = connUser;
+
+    // Join room
+    socket.emit('join_room', matchId);
+
+    // Update Chat UI details
+    document.getElementById('chat-partner-name').innerText = activeUser.name;
+    document.getElementById('chat-partner-avatar').innerText = activeUser.avatar;
+    document.getElementById('chat-partner-avatar').style.background = `linear-gradient(135deg, ${activeUser.color}ee, ${activeUser.color}88)`;
+    
+    // Toggle layout views
+    document.getElementById('tabs-interface-panel').style.display = 'none';
+    document.getElementById('chat-interface-panel').style.display = 'flex';
+    document.getElementById('dashboard-grid-layout').style.gridTemplateColumns = "1fr 400px";
+
+    // Load message history
+    try {
+      const res = await fetch(`/api/messages/${matchId}`);
+      const data = await res.json();
+      if (data.success) {
+        const historyContainer = document.getElementById('chat-messages-history');
+        if (data.messages.length === 0) {
+          historyContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 40px;" id="no-msg-label">No messages yet. Say hello!</div>`;
+        } else {
+          historyContainer.innerHTML = '';
+          data.messages.forEach(msg => appendMessage(msg));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    renderConnections();
+    lucide.createIcons();
+    scrollChatBottom();
+  }
+
+  window.closeChat = function() {
+    activeChatId = null;
+    activeUser = null;
+    document.getElementById('chat-interface-panel').style.display = 'none';
+    document.getElementById('tabs-interface-panel').style.display = 'flex';
+    document.getElementById('dashboard-grid-layout').style.gridTemplateColumns = "1fr 300px";
+    
+    renderConnections();
+    lucide.createIcons();
+  }
+
+  function appendMessage(msg) {
+    const historyContainer = document.getElementById('chat-messages-history');
+    
+    const noMsgLabel = document.getElementById('no-msg-label');
+    if (noMsgLabel) noMsgLabel.remove();
+
+    const isMine = msg.senderId === currentUserId;
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+
+    const msgDiv = document.createElement('div');
+    msgDiv.style.display = 'flex';
+    msgDiv.style.flexDirection = 'column';
+    msgDiv.style.alignItems = isMine ? 'flex-end' : 'flex-start';
+    msgDiv.innerHTML = `
+      <div style="background: ${isMine ? 'var(--primary-color)' : 'var(--bg-card)'}; color: ${isMine ? 'white' : 'var(--text-main)'}; padding: 12px 16px; border-radius: ${isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; border: ${isMine ? 'none' : '1px solid var(--border-color)'}; max-width: 70%; box-shadow: var(--shadow-sm); line-height: 1.5;">
+        ${msg.content}
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; padding: 0 4px;">${timeStr}</span>
+    `;
+
+    historyContainer.appendChild(msgDiv);
+    scrollChatBottom();
+  }
+
+  function scrollChatBottom() {
+    const historyContainer = document.getElementById('chat-messages-history');
+    historyContainer.scrollTop = historyContainer.scrollHeight;
+  }
+
+  window.sendMessage = function(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-text-input');
+    const val = input.value.trim();
+    if (!val || !activeChatId || !socket) return;
+
+    socket.emit('send_message', {
+      senderId: currentUserId,
+      receiverId: activeUser.id,
+      matchId: activeChatId,
+      content: val
+    });
+
+    input.value = '';
+  }
+
+  window.completeSession = async function() {
+    try {
+      const res = await fetch('/api/rewards/award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'session_completed' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("You earned +10 points for completing a session!");
+        loadDashboardData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  window.switchTab = function(tabName) {
+    currentTab = tabName;
+    document.getElementById('tab-btn-upcoming').style.color = tabName === 'upcoming' ? 'var(--primary-color)' : 'var(--text-muted)';
+    document.getElementById('tab-btn-upcoming').style.borderBottom = tabName === 'upcoming' ? '2px solid var(--primary-color)' : '2px solid transparent';
+    document.getElementById('tab-btn-past').style.color = tabName === 'past' ? 'var(--primary-color)' : 'var(--text-muted)';
+    document.getElementById('tab-btn-past').style.borderBottom = tabName === 'past' ? '2px solid var(--primary-color)' : '2px solid transparent';
+
+    document.getElementById('tab-panel-upcoming').style.display = tabName === 'upcoming' ? 'flex' : 'none';
+    document.getElementById('tab-panel-past').style.display = tabName === 'past' ? 'block' : 'none';
+  }
+</script>
+{% endblock %}

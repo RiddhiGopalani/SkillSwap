@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="matches-page" style="min-height: 100vh; padding-top: 80px; background: var(--bg-color);">
+  
+  <!-- LOADING PANEL -->
+  <div id="loading-panel" style="min-height: 100vh; padding-top: 80px; display: flex; align-items: center; justify-content: center; background: var(--bg-color);">
+    <div style="text-align: center;">
+      <div class="loading-ring" style="width: 60px; height: 60px; border-top-color: var(--primary-color); margin: 0 auto 20px;"></div>
+      <h2 class="text-gradient-1" style="font-size: 1.8rem; margin-bottom: 8px;">Running matchmaking algorithm...</h2>
+      <p style="color: var(--text-muted);">Finding the best overlaps for your schedule and skills.</p>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE PANEL -->
+  <div id="empty-panel" style="display: none; min-height: 100vh; padding-top: 120px; align-items: center; justify-content: center; background: var(--bg-color);">
+    <div style="text-align: center; padding: 40px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-color); max-width: 500px; margin: 0 auto;">
+      <h2 style="font-size: 2rem; margin-bottom: 16px; color: var(--text-main);">No matches yet</h2>
+      <p style="color: var(--text-muted); margin-bottom: 24px;">We couldn't find anyone whose skills and schedule currently align with yours. Try adding more availability or broadening your skills!</p>
+      <a href="{{ url_for('main.profile') }}" class="btn-modern" style="text-decoration: none; display: inline-block;">Update Profile</a>
+    </div>
+  </div>
+
+  <!-- MATCHES LIST PANEL -->
+  <div id="content-panel" style="display: none; max-width: 800px; margin: 0 auto; padding: 0 20px 40px;">
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h1 class="text-gradient-2" style="font-size: 2.5rem; margin-bottom: 12px; font-weight: 700;">Your Best Matches</h1>
+      <p style="color: var(--text-muted); font-size: 1.1rem;">We found students who perfectly complement your skills and schedule.</p>
+    </div>
+
+    <div id="matches-list" style="display: flex; flex-direction: column; gap: 24px;">
+      <!-- Dynamic matches card elements go here -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let expandedMatchId = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Artificial 800ms loading timeout to match React UX
+    setTimeout(loadMatches, 800);
+  });
+
+  async function loadMatches() {
+    try {
+      const res = await fetch('/api/matches');
+      const data = await res.json();
+      
+      document.getElementById('loading-panel').style.display = 'none';
+
+      if (data.success && data.matches.length > 0) {
+        document.getElementById('content-panel').style.display = 'block';
+        renderMatches(data.matches);
+      } else {
+        document.getElementById('empty-panel').style.display = 'flex';
+      }
+    } catch (e) {
+      console.error(e);
+      document.getElementById('loading-panel').style.display = 'none';
+      document.getElementById('empty-panel').style.display = 'flex';
+    }
+  }
+
+  function renderMatches(matches) {
+    const list = document.getElementById('matches-list');
+    list.innerHTML = matches.map((user, idx) => {
+      const isTopMatch = idx === 0;
+      const isExpanded = expandedMatchId === user.matchId;
+      const progressColor = user.score >= 90 ? "#10b981" : user.score >= 75 ? "#3b82f6" : user.score >= 50 ? "#f59e0b" : "#9ca3af";
+
+      // SVG progress circular constants
+      const sqSize = 70;
+      const strokeWidth = 6;
+      const radius = (sqSize - strokeWidth) / 2;
+      const dashArray = radius * Math.PI * 2;
+      const dashOffset = dashArray - (dashArray * user.score) / 100;
+
+      return `
+        <div class="match-card animate-in" style="
+          background: var(--bg-card);
+          border-radius: 20px;
+          padding: 24px;
+          border: 1px solid var(--border-color);
+          box-shadow: var(--shadow-sm);
+          transition: var(--transition);
+          transform: ${isExpanded ? "scale(1.02)" : "scale(1)"};
+          position: relative;
+          overflow: hidden;
+        ">
+          ${isTopMatch ? `<div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(to right, #02dfb6, #02df5d);"></div>` : ''}
+
+          <div style="display: flex; gap: 20px; align-items: flex-start;">
+            
+            <!-- circular score ring -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <svg width="${sqSize}" height="${sqSize}" viewBox="0 0 ${sqSize} ${sqSize}" style="position: relative;">
+                <circle cx="${sqSize / 2}" cy="${sqSize / 2}" r="${radius}" stroke-width="${strokeWidth}px" style="fill: none; stroke: var(--border-color);" />
+                <circle cx="${sqSize / 2}" cy="${sqSize / 2}" r="${radius}" stroke-width="${strokeWidth}px" transform="rotate(-90 ${sqSize / 2} ${sqSize / 2})"
+                  style="fill: none; stroke: ${progressColor}; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: ${dashArray}; stroke-dashoffset: ${dashOffset}; transition: stroke-dashoffset 1s ease-out;" />
+                <text x="50%" y="50%" dy=".3em" text-anchor="middle" style="font-size: ${sqSize * 0.28}px; font-weight: bold; fill: ${progressColor};">
+                  ${user.score}%
+                </text>
+              </svg>
+              
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; marginTop: 12px; margin-top: 10px;">
+                ${isTopMatch ? `<span style="font-size: 0.75rem; background: linear-gradient(135deg, #a2df02, #02dfb6); color: #000; padding: 4px 10px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">★ Top Match</span>` : ''}
+                <span style="
+                    font-size: 0.75rem; 
+                    background: ${user.score >= 90 ? "rgba(16, 185, 129, 0.1)" : user.score >= 75 ? "rgba(59, 130, 246, 0.1)" : user.score >= 50 ? "rgba(245, 158, 11, 0.1)" : "rgba(156, 163, 175, 0.1)"}; 
+                    color: ${progressColor}; 
+                    padding: 4px 8px; 
+                    border-radius: 12px; 
+                    font-weight: bold;
+                ">
+                  ${user.label}
+                </span>
+              </div>
+            </div>
+
+            <!-- basic details -->
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 4px;">${user.name}</h3>
+                  <p style="color: var(--text-muted); font-size: 0.95rem;">${user.mode || 'Online'}</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                  <button onclick="toggleExpand(${user.matchId})" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer;">
+                    <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" style="width: 20px; height: 20px;"></i>
+                  </button>
+                  <a href="/timetable?match_id=${user.matchId}" class="btn-modern" style="padding: 8px 20px; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.95rem;">
+                     View Match Details
+                  </a>
+                </div>
+              </div>
+              
+              <p style="margin-top: 16px; color: var(--text-main); line-height: 1.5;">"${user.bio}"</p>
+              
+              ${!isExpanded ? `
+                 <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 4px;">Skills:</span>
+                    ${user.teaches.slice(0,2).map(t => `<span style="background: rgba(2, 153, 223, 0.1); color: #0299df; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;">${t.topic}</span>`).join('')}
+                    ${user.teaches.length > 2 ? `<span style="color: var(--text-muted); font-size: 0.85rem;">+${user.teaches.length - 2} more</span>` : ''}
+                 </div>
+              ` : ''}
+            </div>
+
+          </div>
+
+          <!-- expanded details panel -->
+          ${isExpanded ? `
+             <div style="margin-top: 24px; padding-top: 24px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 24px;" class="animate-in">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                   <!-- Teaches -->
+                   <div style="background: rgba(2, 153, 223, 0.04); padding: 16px; border-radius: 12px; border: 1px solid rgba(2, 153, 223, 0.1);">
+                      <h4 style="color: #0299df; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i data-lucide="book-open" style="width: 16px; height: 16px;"></i> They can teach you</h4>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                         ${user.teaches.map(t => `
+                            <div style="display: flex; justify-content: space-between; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                               <span style="font-weight: 600;">${t.topic}</span>
+                               <span style="font-size: 0.8rem; color: var(--text-muted);">${t.level}</span>
+                            </div>
+                         `).join('')}
+                      </div>
+                   </div>
+                   
+                   <!-- Learns -->
+                   <div style="background: rgba(2, 223, 182, 0.04); padding: 16px; border-radius: 12px; border: 1px solid rgba(2, 223, 182, 0.1);">
+                      <h4 style="color: #02dfb6; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i data-lucide="heart" style="width: 16px; height: 16px;"></i> They need your help with</h4>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                         ${user.learns.map(l => `
+                            <div style="display: flex; justify-content: space-between; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                               <span style="font-weight: 600;">${l.topic}</span>
+                               <span style="font-size: 0.8rem; color: var(--text-muted);">${l.urgency}</span>
+                            </div>
+                         `).join('')}
+                      </div>
+                   </div>
+                </div>
+
+                <!-- availability overlap -->
+                <div style="background: var(--bg-color); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px;">
+                   <i data-lucide="calendar" style="color: var(--text-muted); width: 24px; height: 24px;"></i>
+                   <div>
+                      <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Available times</p>
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        ${user.days.map(d => `<span style="font-size: 0.85rem; background: var(--border-color); padding: 2px 8px; border-radius: 4px;">${d}</span>`).join('')}
+                        <span style="color: var(--text-muted);">•</span>
+                        ${user.slots.map(s => `<span style="font-size: 0.85rem; color: var(--text-muted);">${s}</span>`).join('')}
+                      </div>
+                   </div>
+                </div>
+             </div>
+          ` : ''}
+
+        </div>
+      `;
+    }).join('');
+
+    lucide.createIcons();
+  }
+
+  window.toggleExpand = function(matchId) {
+    if (expandedMatchId === matchId) expandedMatchId = null;
+    else expandedMatchId = matchId;
+    loadMatches(); // Re-render card changes
+  }
+</script>
+{% endblock %}

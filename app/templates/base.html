@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap - Peer-to-Peer Student Learning</title>
+    
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    
+    <!-- Core CSS Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Fast Inline Theme Checker to Prevent White Flash -->
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        // We will apply the theme to the body once DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.className = savedTheme;
+            const themeSwitch = document.querySelector('.theme-switch');
+            if (savedTheme === 'dark') {
+                themeSwitch?.classList.add('dark');
+            }
+            lucide.createIcons();
+        });
+    </script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('main.index') }}" class="navbar-brand">
+            <i data-lucide="sparkles" class="navbar-logo-icon"></i>
+            <span class="navbar-title">SkillSwap</span>
+        </a>
+        <div class="navbar-links">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.matches') }}" class="nav-link">Matches</a>
+                <a href="{{ url_for('main.timetable') }}" class="nav-link">Timetable</a>
+                <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('main.profile') }}" class="nav-link nav-link-highlight">Profile</a>
+                <a href="{{ url_for('main.logout') }}" class="nav-link" style="color: var(--text-muted);">Logout</a>
+            {% else %}
+                <a href="{{ url_for('main.profile') }}" class="nav-link nav-link-highlight">Get Started</a>
+                <a href="{{ url_for('main.login') }}" class="nav-link">Login</a>
+            {% endif %}
+            
+            <!-- Theme Toggler -->
+            <div class="theme-switch" onclick="toggleTheme()">
+                <div class="theme-slider">
+                    <i id="theme-icon" data-lucide="sun" style="width: 14px; height: 14px;"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <script>
+        function toggleTheme() {
+            const currentTheme = document.body.className;
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.className = newTheme;
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            const themeSwitch = document.querySelector('.theme-switch');
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (newTheme === 'dark') {
+                themeSwitch.classList.add('dark');
+                themeIcon.setAttribute('data-lucide', 'moon');
+            } else {
+                themeSwitch.classList.remove('dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Initialize correct icon on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeIcon = document.getElementById('theme-icon');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            if (currentTheme === 'dark') {
+                themeIcon.setAttribute('data-lucide', 'moon');
+            } else {
+                themeIcon.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
