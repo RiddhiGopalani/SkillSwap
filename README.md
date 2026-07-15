@@ -1,19 +1,15 @@
 <div align="center">
 
 # 🎓 SkillSwap
-### Intelligent Peer-to-Peer Learning & Mentorship Platform
+### Peer-to-Peer Learning Platform
 
-**An adaptive student collaboration platform that intelligently connects learners with peers who can teach, mentor, or study together—by combining profile intelligence, skill matching, timetable overlap, and real-time communication into a unified collaborative ecosystem.**
+**An intelligent full-stack platform that connects students through skill exchange by combining profile-based matching, schedule optimization, and real-time collaboration into a seamless learning ecosystem.**
 
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
-![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/API-Express-000000?logo=express&logoColor=white)
+![Flask](https://img.shields.io/badge/Backend-Flask-000000?logo=flask&logoColor=white)
 ![MySQL](https://img.shields.io/badge/Database-MySQL-4479A1?logo=mysql&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-010101?logo=socket.io&logoColor=white)
 ![Status](https://img.shields.io/badge/status-complete-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
-
-*Building meaningful learning connections—one skill at a time.*
 
 </div>
 
@@ -21,368 +17,162 @@
 
 # The Problem
 
-Every student knows something valuable.
+Students often possess valuable academic knowledge, technical expertise, creative abilities, or extracurricular skills that could benefit others. However, discovering peers with complementary learning goals is difficult, fragmented, and largely dependent on personal networks or messaging groups.
 
-Some are exceptional programmers. Others excel in mathematics, design, music, public speaking, sports, or interview preparation.
+Traditional communication platforms lack intelligent matching, structured scheduling, and collaborative tools, making peer learning inefficient and limiting opportunities for knowledge exchange.
 
-At the same time, thousands of students are actively searching for someone willing to teach those exact skills.
-
-Unfortunately, finding the right peer is surprisingly difficult.
-
-Learning communities today rely on scattered WhatsApp groups, Discord servers, classroom announcements, and word of mouth. These methods lack personalization, scheduling support, and structured mentorship, causing valuable opportunities for collaborative learning to disappear.
-
-What students need is a platform that can automatically answer:
-
-- **Who can teach me?**
-- **Who wants to learn what I know?**
-- **When are both of us available?**
-- **How do we continue learning together?**
-
-SkillSwap is built to answer all four.
+SkillSwap addresses this by creating a centralized platform where every student can simultaneously become both a learner and a mentor.
 
 ---
 
-# Why SkillSwap Is Different
+# The Solution
 
-Most learning platforms simply list users or courses.
+SkillSwap transforms peer learning into a structured, data-driven experience through two interconnected systems:
 
-SkillSwap instead builds **intelligent learning relationships.**
+### 🤝 Intelligent Matching Engine
 
-🧠 **Dynamic Compatibility Matching.**
+Student profiles, teachable skills, learning interests, and availability are combined to generate compatibility-based peer recommendations instead of simple keyword matches.
 
-Rather than recommending users randomly, SkillSwap evaluates multiple profile dimensions—including teachable skills, learning goals, experience level, interests, and schedule overlap—to generate meaningful peer recommendations.
+### 📅 Collaborative Learning Platform
 
-⚡ **Learning Doesn't Stop After Matching.**
-
-Finding a partner is only the beginning.
-
-Built-in messaging, editable schedules, and progress tracking encourage long-term engagement instead of one-time interactions.
-
-📅 **Availability-Aware Connections.**
-
-Two students may perfectly complement each other's skills—but if they are never free simultaneously, the recommendation is useless.
-
-SkillSwap considers timetable intersections before suggesting matches.
-
-🏆 **Gamified Collaboration.**
-
-Sessions completed, mentorship provided, and skills learned contribute toward reward points and community recognition, encouraging continuous participation.
-
-🌍 **Designed for Scale.**
-
-The platform is built with a modular architecture capable of expanding from a single college to a nationwide collaborative learning network.
+Once matched, students can communicate, manage schedules, update profiles, and organize learning sessions within a single platform, creating a continuous and engaging learning ecosystem.
 
 ---
 
-# Platform Architecture
+# Why SkillSwap is Different
+
+🎯 **Mutual Skill Exchange**
+
+Unlike traditional tutoring platforms where learning flows in one direction, SkillSwap enables every user to both teach and learn, encouraging collaborative knowledge sharing.
+
+⚡ **Dynamic Profile-Based Matching**
+
+Recommendations are generated by combining teachable skills, learning goals, availability overlap, and user preferences instead of relying solely on subject selection.
+
+📚 **Beyond Academics**
+
+SkillSwap supports hundreds of skills across academics, programming, languages, sports, music, art, public speaking, finance, photography, cooking, and many more, making it suitable for holistic peer development.
+
+💬 **Collaborative Experience**
+
+Integrated scheduling, profile management, and real-time communication keep the entire learning journey inside one platform without requiring external tools.
+
+---
+
+# Platform Workflow
 
 ```mermaid
-flowchart TD
+flowchart LR
 
-A["Student Registration"] --> B["Profile Creation"]
+A[Create Profile]
+--> B[Select Skills to Teach]
 
-B --> C["Skill Inventory<br/>Can Teach"]
-B --> D["Learning Goals<br/>Want to Learn"]
-B --> E["Availability Schedule"]
+B --> C[Select Skills to Learn]
 
-C --> F["Compatibility Engine"]
-D --> F
-E --> F
+C --> D[Choose Availability]
 
-F --> G["Peer Matching"]
+D --> E[Matching Engine]
 
-G --> H["Real-Time Chat"]
-G --> I["Session Scheduler"]
-G --> J["Reward System"]
+E --> F[Compatible Students]
 
-H --> K["Collaborative Learning"]
-I --> K
-J --> K
+F --> G[Schedule Learning Session]
 
-K --> L["Profile Growth & Engagement"]
+G --> H[Real-Time Chat]
 
-classDef innovation fill:#ffe9c7,stroke:#e8830c,stroke-width:2px,color:#000;
-classDef success fill:#d6f5d6,stroke:#2a9d2a,stroke-width:2px,color:#000;
-
-class F innovation;
-class K success;
+H --> I[Dashboard & Progress]
 ```
 
 ---
 
-# Learning Journey
+# Core Features
 
-Every stage increases collaboration quality.
-
-| Stage | Outcome |
-|--------|---------|
-| Student Registration | Verified user account |
-| Profile Completion | Skills & interests collected |
-| Compatibility Matching | Best learning partners generated |
-| Schedule Alignment | Common availability identified |
-| Chat & Session Booking | Peer interaction begins |
-| Learning Session | Knowledge exchange |
-| Reward Tracking | Community engagement increases |
-
----
-
-# How It Works
-
-| # | Stage | In Plain Words |
-|---|---------|----------------|
-| 1 | **Authentication** | Students securely register and log into the platform using authenticated user accounts. |
-| 2 | **Profile Creation** | Users define the skills they can teach, the skills they want to learn, academic interests, and availability schedule. |
-| 3 | **Compatibility Analysis** | The matching engine evaluates complementary skills, mutual interests, learning priorities, and schedule overlap. |
-| 4 | **Smart Match Generation** | High-quality mentor and learner pairs are recommended dynamically rather than using static lists. |
-| 5 | **Real-Time Communication** | Matched users communicate instantly through Socket.io powered messaging. |
-| 6 | **Session Scheduling** | Students organize learning sessions using editable availability calendars. |
-| 7 | **Reward Tracking** | Every completed interaction contributes toward participation points and engagement history. |
-| 8 | **Continuous Learning** | Students build long-term mentorship relationships while expanding their skill network. |
-
----
-
-# Matching Engine
-
-The recommendation system evaluates several compatibility signals.
-
-```
-Compatibility Score
-
-=
-Skill Match
-+
-Learning Goal Match
-+
-Availability Overlap
-+
-Shared Interests
-+
-Engagement Weight
-```
-
-| Component | Purpose |
-|------------|---------|
-| Skill Match | Measures whether one user's teachable skills satisfy another user's learning goals |
-| Learning Goals | Prioritizes users actively seeking similar knowledge |
-| Schedule Overlap | Ensures both users have common free time |
-| Shared Interests | Improves collaboration quality |
-| Engagement Score | Rewards active and reliable mentors |
-
-Higher compatibility scores produce stronger recommendations.
-
----
-
-# Platform Features
-
-### 👤 User Profiles
-
-- Personalized student profiles
-- Skills offered
-- Skills requested
-- Academic interests
-- Availability schedules
-
----
-
-### 🤝 Intelligent Matching
-
-- Dynamic compatibility scoring
-- Mutual skill discovery
-- Schedule-aware recommendations
-- Peer mentoring suggestions
-
----
-
-### 💬 Real-Time Communication
-
-- Instant messaging
-- Socket.io integration
-- Live conversation updates
-
----
-
-### 📅 Session Scheduling
-
-- Editable availability
-- Meeting planning
-- Learning session organization
-
----
-
-### 🏆 Rewards & Engagement
-
-- Learning points
-- Mentor participation tracking
-- Community recognition
+| Feature | Description |
+|---------|-------------|
+| 👤 Profile Management | Create and edit personalized student profiles |
+| 🎯 Skill Matching | Match students using teachable skills, learning goals, and availability |
+| 📚 Skill Marketplace | Browse hundreds of categorized academic and extracurricular skills |
+| 📅 Timetable Generation | Automatically generate compatible learning schedules |
+| 💬 Real-Time Chat | Instant messaging between matched students |
+| 🏆 Reward System | Encourage knowledge sharing through participation points |
+| 📊 Dashboard | Track matches, sessions, and learning activity |
+| 🔄 Dynamic Updates | Profile edits automatically influence future matches |
 
 ---
 
 # Tech Stack
 
-| Component | Technology | Why |
-|------------|------------|-----|
-| Frontend | React.js | Fast, component-based user interface |
-| Routing | React Router | Seamless single-page navigation |
-| Styling | Vanilla CSS | Lightweight and customizable UI |
-| Backend | Node.js + Express.js | Scalable REST API architecture |
-| Database | MySQL | Structured relational data management |
-| Real-Time Layer | Socket.io | Instant peer communication |
-| API Communication | Axios | Efficient client-server interaction |
-| Authentication | Express Middleware + Environment Variables | Secure modular authentication |
-| Deployment Ready | Modular MVC Structure | Easy scalability and maintenance |
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Frontend | React.js | Responsive single-page user interface |
+| Backend | Flask | Business logic and API handling |
+| Database | MySQL | Persistent storage for users, skills, matches, and schedules |
+| Communication | REST APIs | Connect frontend and backend |
+| Version Control | Git & GitHub | Source code management |
+| Development | VS Code | Development environment |
 
 ---
 
 # Project Structure
 
 ```text
-SkillSwap/
-
-├── client/
-│   ├── public/
+skillswap/
+│
+├── frontend/
 │   ├── src/
 │   │   ├── pages/
 │   │   ├── components/
-│   │   ├── services/
 │   │   ├── assets/
-│   │   └── App.jsx
+│   │   └── App.js
+│   └── public/
 │
-├── server/
+├── backend/
+│   ├── app.py
 │   ├── routes/
-│   ├── controllers/
-│   ├── middleware/
 │   ├── models/
-│   ├── config/
-│   ├── socket/
-│   └── server.js
+│   ├── database/
+│   └── config/
 │
-├── database/
-│   └── schema.sql
-│
-├── package.json
+├── screenshots/
 ├── README.md
-└── .env
+├── requirements.txt
+└── .gitignore
 ```
 
 ---
 
 # Getting Started
 
-## Clone Repository
-
 ```bash
-git clone https://github.com/yourusername/SkillSwap.git
+git clone https://github.com/your-username/skillswap.git
 
-cd SkillSwap
-```
+cd backend
+pip install -r requirements.txt
+python app.py
 
----
-
-## Install Dependencies
-
-### Frontend
-
-```bash
-cd client
-
+cd ../frontend
 npm install
-```
-
-### Backend
-
-```bash
-cd server
-
-npm install
-```
-
----
-
-## Configure Environment
-
-Create a `.env` file.
-
-```env
-PORT=5000
-
-DB_HOST=localhost
-
-DB_USER=root
-
-DB_PASSWORD=your_password
-
-DB_NAME=skillswap
-
-JWT_SECRET=your_secret_key
-```
-
----
-
-## Run the Backend
-
-```bash
 npm start
 ```
 
----
-
-## Run the Frontend
-
-```bash
-npm run dev
-```
-
----
-
-The application will be available at:
+The application will launch locally at:
 
 ```
-Frontend
-
-http://localhost:5173
-
-Backend
-
-http://localhost:5000
+Frontend: http://localhost:3000
+Backend: http://localhost:5000
 ```
 
 ---
 
 # Future Roadmap
 
-- [ ] AI-powered recommendation engine
-- [ ] Learning behavior analytics
-- [ ] Skill verification badges
-- [ ] Video calling integration
-- [ ] Multi-college collaborative network
-- [ ] Mobile application
-- [ ] Role-based administration dashboard
-- [ ] Cloud deployment with Docker & Kubernetes
-
----
-
-# Future AI Vision
-
-SkillSwap's next evolution introduces an AI-assisted recommendation engine capable of learning from user behavior rather than relying solely on static profile information.
-
-The system will analyze:
-
-- Learning consistency
-- Mentor responsiveness
-- Session completion history
-- Preferred learning styles
-- Skill progression
-- Community engagement
-
-These insights will enable increasingly accurate peer recommendations over time, creating a personalized collaborative learning experience for every student.
-
----
-
-# Acknowledgments
-
-Built to encourage collaborative education through peer learning, mentorship, and intelligent matching.
-
-Inspired by the belief that every student can be both a learner and a teacher.
+- AI-powered recommendation engine
+- Personalized learning analytics
+- Video calling integration
+- Mobile application
+- Multi-college networking
+- Skill certification
+- Community learning groups
+- Calendar synchronization
 
 ---
 
@@ -392,8 +182,8 @@ Released under the MIT License.
 
 <div align="center">
 
-**Learn Together. Teach Together. Grow Together.**
+**Connecting Students Through Skills.**
 
-**SkillSwap**
+*Team SkillSwap · PICT Pune · CEP*
 
 </div>
