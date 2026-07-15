@@ -6,7 +6,7 @@ import Profile from "./pages/Profile";
 import Matches from "./pages/Matches";
 import Timetable from "./pages/Timetable";
 import Dashboard from "./pages/Dashboard";
-import "./styles.css";
+import "./styles/styles.css";
 
 function App() {
   return (

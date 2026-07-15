@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { fetchRewards, fetchMatches, fetchUserTimetable, fetchMessages, awardRewards } from "../services/api";
 import { Video, MessageCircle, Calendar, Send, ArrowLeft, Award, CheckCircle } from "lucide-react";
 import io from 'socket.io-client';
 import { AppContext } from "../context/AppContext";
@@ -32,21 +32,21 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
         try {
             // Fetch Rewards
-            const rewardRes = await axios.get(`http://localhost:5000/api/rewards/${profile.id}`);
+            const rewardRes = await fetchRewards(profile.id);
             if (rewardRes.data) {
                 setPoints(rewardRes.data.points || 0);
                 setBadges(rewardRes.data.badges || []);
             }
 
             // Fetch Matches for Active Connections (Sidebar)
-            const matchRes = await axios.get(`http://localhost:5000/api/matches/${profile.id}`);
+            const matchRes = await fetchMatches(profile.id);
             if (matchRes.data?.matches) {
                 setActiveConnections(matchRes.data.matches);
             }
 
             // Fetch Upcoming Sessions
             try {
-                const timetableRes = await axios.get(`http://localhost:5000/api/timetable/user/${profile.id}`);
+                const timetableRes = await fetchUserTimetable(profile.id);
                 if (timetableRes.data?.sessions) {
                     setUpcomingSessions(timetableRes.data.sessions);
                 }
@@ -86,15 +86,15 @@ export default function Dashboard() {
      if (activeChatId && socket) {
          socket.emit('join_room', activeChatId);
          
-         const fetchMessages = async () => {
+         const loadMessagesHistory = async () => {
              try {
-                 const res = await axios.get(`http://localhost:5000/api/messages/${activeChatId}`);
+                 const res = await fetchMessages(activeChatId);
                  if (res.data.success) setChatHistory(res.data.messages);
              } catch (err) {
                  console.error("Failed to fetch messages", err);
              }
          };
-         fetchMessages();
+         loadMessagesHistory();
      }
   }, [activeChatId, socket]);
 
@@ -121,10 +121,7 @@ export default function Dashboard() {
 
   const handleCompleteSession = async () => {
       try {
-          const res = await axios.post('http://localhost:5000/api/rewards/award', {
-              userId: profile.id,
-              reason: 'session_completed'
-          });
+          const res = await awardRewards(profile.id, 'session_completed');
           if (res.data.success) {
               setPoints(res.data.points);
               setBadges(res.data.badges);

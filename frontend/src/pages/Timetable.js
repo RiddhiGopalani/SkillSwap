@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { fetchTimetable, generateTimetable as generateTimetableApi, updateTimetable } from "../services/api";
 import { Calendar, CheckCircle, RefreshCw, Edit3, Clock, BookOpen, Trash2, Plus, Save, X } from "lucide-react";
 
 export default function Timetable() {
@@ -19,9 +19,9 @@ export default function Timetable() {
       try {
         if (!match?.matchId) return;
         
-        let res = await axios.get(`http://localhost:5000/api/timetable/${match.matchId}`);
+        let res = await fetchTimetable(match.matchId);
         if (!res.data || res.data.error) {
-           res = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+           res = await generateTimetableApi(match.matchId);
         }
         
         if (res.data?.sessions) {
@@ -37,7 +37,7 @@ export default function Timetable() {
         }
       } catch (err) {
          if (err.response?.status === 404) {
-             const fallback = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+             const fallback = await generateTimetableApi(match.matchId);
              if (fallback.data?.sessions) {
                 setSchedule(fallback.data.sessions.map((s, idx) => ({
                     id: idx.toString(),
@@ -59,10 +59,10 @@ export default function Timetable() {
     fetchOrGenerateTimetable();
   }, [match]);
 
-  const generateTimetable = async () => {
+  const handleGenerateTimetable = async () => {
       setLoading(true);
       try {
-          const res = await axios.post(`http://localhost:5000/api/timetable/generate/${match.matchId}`);
+          const res = await generateTimetableApi(match.matchId);
           if (res.data?.sessions) {
               setSchedule(res.data.sessions.map((s, idx) => ({ id: idx.toString(), day: s.day, time: s.time, duration: "1 hour", topic: s.topic, role: "teach", partner: match.name})));
               setAccepted(false);
@@ -74,9 +74,7 @@ export default function Timetable() {
 
   const handleSavePatch = async () => {
       try {
-          await axios.patch(`http://localhost:5000/api/timetable/${match.matchId}`, {
-              sessions: schedule.map(s => ({ day: s.day, time: s.time, topic: s.topic }))
-          });
+          await updateTimetable(match.matchId, schedule.map(s => ({ day: s.day, time: s.time, topic: s.topic })));
           setIsEditing(false);
       } catch(err) { console.error(err); }
   };
@@ -129,7 +127,7 @@ export default function Timetable() {
           <div style={{ display: "flex", gap: "12px" }}>
             {!isEditing ? (
               <>
-                <button className="btn-secondary" onClick={generateTimetable} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>
+                <button className="btn-secondary" onClick={handleGenerateTimetable} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>
                   <RefreshCw size={18} /> Regenerate
                 </button>
                 <button className="btn-secondary" onClick={() => setIsEditing(true)} disabled={loading || accepted} style={{ opacity: accepted ? 0.5 : 1 }}>

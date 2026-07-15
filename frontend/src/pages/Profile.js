@@ -1,6 +1,6 @@
 import React, { useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { getUserProfile, fetchUserSkills, fetchUserAvailability, saveUserProfile, awardRewards, registerUser, loginUser, addUserSkill, addUserAvailability, generateMatches } from "../services/api";
 import { AppContext } from "../context/AppContext";
 import { Search, ChevronRight, ChevronLeft, CheckCircle2, Star, Sparkles, X } from "lucide-react";
 
@@ -226,13 +226,13 @@ export default function Profile() {
 
           const fetchProfile = async () => {
               try {
-                  const userRes = await axios.get(`http://localhost:5000/api/users/${profile.id}`);
+                  const userRes = await getUserProfile(profile.id);
                   if (userRes.data) {
                       setName(userRes.data.name || "");
                       setEmail(userRes.data.email || "");
                   }
 
-                  const skillsRes = await axios.get(`http://localhost:5000/api/skills/${profile.id}`);
+                  const skillsRes = await fetchUserSkills(profile.id);
                   if (skillsRes.data) {
                       const tSkills = {};
                       const lSkills = {};
@@ -244,7 +244,7 @@ export default function Profile() {
                       setLearnSkills(lSkills);
                   }
 
-                  const availRes = await axios.get(`http://localhost:5000/api/availability/${profile.id}`);
+                  const availRes = await fetchUserAvailability(profile.id);
                   if (availRes.data) {
                       const d = new Set();
                       const s = new Set();
@@ -316,30 +316,30 @@ export default function Profile() {
 
       if (isEditMode) {
           userId = profile.id;
-          await axios.put(`http://localhost:5000/api/users/${userId}/profile`, {
+          await saveUserProfile(userId, {
               name, email, teaches, learns, days, slots
           });
           
           // Reward +2 for editing/completing profile
           try {
-             await axios.post('http://localhost:5000/api/rewards/award', { userId, reason: 'profile_completed' });
+             await awardRewards(userId, 'profile_completed');
           } catch(e) {}
       } else {
           // 1. Get or Create User
           let userRes;
           try {
-              userRes = await axios.post("http://localhost:5000/api/users/register", { name, email, password: "password123" });
+              userRes = await registerUser(name, email, "password123");
           } catch (err) {
-              userRes = await axios.post("http://localhost:5000/api/users/login", { email, password: "password123" });
+              userRes = await loginUser(email, "password123");
           }
           userId = userRes.data.id;
 
           // 2. Post Skills
           for (const t of teaches) {
-              await axios.post("http://localhost:5000/api/skills", { userId, skillName: t.topic, type: 'teach', level: t.level });
+              await addUserSkill(userId, t.topic, 'teach', t.level);
           }
           for (const l of learns) {
-              await axios.post("http://localhost:5000/api/skills", { userId, skillName: l.topic, type: 'learn', level: l.level });
+              await addUserSkill(userId, l.topic, 'learn', l.level);
           }
 
           // 3. Post Availabilities
@@ -348,14 +348,14 @@ export default function Profile() {
                   const times = s.match(/\((.*?)\)/)?.[1];
                   if (times) {
                       const [start, end] = times.split('-');
-                      await axios.post("http://localhost:5000/api/availability", { userId, day: d, startTime: start, endTime: end });
+                      await addUserAvailability(userId, d, start, end);
                   }
               }
           }
       }
 
       // 4. Trigger Real Match Generation
-      await axios.post(`http://localhost:5000/api/matches/generate/${userId}`);
+      await generateMatches(userId);
 
       // Update global context
       setMatchData({ 

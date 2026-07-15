@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { fetchMatches } from "../services/api";
 import { AppContext } from "../context/AppContext";
 import { ChevronDown, ChevronUp, Calendar as CalIcon, BookOpen, Heart } from "lucide-react";
 
@@ -32,10 +32,10 @@ export default function Matches() {
   useEffect(() => {
     setLoading(true);
 
-    const fetchMatches = async () => {
+    const loadMatches = async () => {
       try {
         if (!profile?.id) return;
-        const response = await axios.get(`http://localhost:5000/api/matches/${profile.id}`);
+        const response = await fetchMatches(profile.id);
         if (response.data.success) {
             setMatches(response.data.matches);
         }
@@ -46,7 +46,7 @@ export default function Matches() {
       }
     };
 
-    setTimeout(fetchMatches, 800);
+    setTimeout(loadMatches, 800);
   }, [profile]);
 
   if (loading) {
