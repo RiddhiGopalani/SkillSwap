@@ -104,9 +104,9 @@ H --> I[Dashboard & Progress]
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | Frontend | React.js | Responsive single-page user interface |
-| Backend | Flask | Business logic and API handling |
+| Backend | Flask & Flask-SocketIO | Business logic, REST API, and real-time chat sockets |
 | Database | MySQL | Persistent storage for users, skills, matches, and schedules |
-| Communication | REST APIs | Connect frontend and backend |
+| Communication | REST APIs & WebSockets | Connect frontend and backend |
 | Version Control | Git & GitHub | Source code management |
 | Development | VS Code | Development environment |
 
@@ -114,52 +114,131 @@ H --> I[Dashboard & Progress]
 
 # Project Structure
 
+The project has been refactored into a clean, modular MVC (Model-View-Controller) architecture:
+
 ```text
 skillswap/
 │
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   ├── components/
-│   │   ├── assets/
-│   │   └── App.js
-│   └── public/
-│
 ├── backend/
-│   ├── app.py
-│   ├── routes/
-│   ├── models/
-│   ├── database/
-│   └── config/
+│   ├── config/
+│   │   └── settings.py          # Config loader and environment variables setup
+│   ├── app/
+│   │   ├── __init__.py          # Flask App creation and plugin setup
+│   │   ├── controllers/         # Request handling & controller logic (Users, Matches, Sockets)
+│   │   ├── database/            # Database configuration & MySQL pool connection
+│   │   ├── middleware/          # Flask middleware (JWT verification, logging)
+│   │   ├── models/              # Schema mappings (User, Match, Skill, Timetable, Message)
+│   │   ├── routes/              # Route declarations & endpoint mappings
+│   │   ├── services/            # Core business logic (Matching engine, Timetable algorithm)
+│   │   ├── sockets/             # Socket.IO handlers for real-time chat
+│   │   └── utils/               # General utility functions
+│   ├── tests/                   # Automated backend testing suite
+│   ├── .env.example             # Template for setting local environment variables
+│   ├── requirements.txt         # Python dependencies
+│   └── run.py                   # Backend entrypoint script
 │
-├── screenshots/
-├── README.md
-├── requirements.txt
-└── .gitignore
+├── frontend/
+│   ├── public/                  # Public assets and index.html
+│   └── src/
+│       ├── pages/               # Page components (Dashboard, Matches, Profile, Timetable)
+│       ├── services/
+│       │   └── api.js           # Consolidated API client calls
+│       ├── styles/
+│       │   ├── App.css          # App-wide CSS styling
+│       │   ├── index.css        # Global CSS resets
+│       │   └── styles.css       # Platform UI CSS classes
+│       ├── App.js               # Main React router and layout
+│       └── index.js             # React application entrypoint
+│
+├── docs/
+│   ├── api.md                   # API endpoints & request-response contracts
+│   └── architecture.md          # Database schemas & architecture detailed overview
+│
+└── README.md
 ```
 
 ---
 
 # Getting Started
 
-```bash
-git clone https://github.com/your-username/skillswap.git
+### 1. Prerequisites
+Ensure you have the following installed on your machine:
+* Python 3.8+
+* Node.js & npm
+* MySQL Database Server
 
-cd backend
-pip install -r requirements.txt
-python app.py
+---
 
-cd ../frontend
-npm install
-npm start
-```
+### 2. Backend Setup
+1. Open a terminal in the `backend/` folder:
+   ```bash
+   cd backend
+   ```
 
-The application will launch locally at:
+2. Create a virtual environment:
+   ```bash
+   python -m venv .venv
+   ```
 
-```
-Frontend: http://localhost:3000
-Backend: http://localhost:5000
-```
+3. Activate the virtual environment:
+   * **Windows (Cmd/PowerShell):**
+     ```powershell
+     .venv\Scripts\activate
+     ```
+   * **macOS/Linux:**
+     ```bash
+     source .venv/bin/activate
+     ```
+
+4. Install the Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. Set up your local environment file:
+   * Duplicate `.env.example` and rename it to `.env`.
+   * Open `.env` and fill in your MySQL credentials:
+     ```env
+     SECRET_KEY=your-jwt-secret-key
+     DB_HOST=localhost
+     DB_USER=your-mysql-username
+     DB_PASSWORD=your-mysql-password
+     DB_NAME=skillswap
+     PORT=5000
+     ```
+
+6. Run the Flask application:
+   ```bash
+   python run.py
+   ```
+   The backend API will start running at `http://localhost:5000`.
+
+---
+
+### 3. Frontend Setup
+1. Open a new terminal in the `frontend/` folder:
+   ```bash
+   cd frontend
+   ```
+
+2. Install the frontend dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the React development server:
+   ```bash
+   npm start
+   ```
+   The application UI will launch locally at `http://localhost:3000`.
+
+---
+
+# Documentation
+
+Detailed project architecture and API documentation can be found in the `docs/` folder:
+* **Architecture & Database Schema**: [architecture.md](docs/architecture.md)
+* **REST & Socket API Endpoints**: [api.md](docs/api.md)
 
 ---
 
