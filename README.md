@@ -5,9 +5,9 @@
 
 **An intelligent full-stack platform that connects students through skill exchange by combining profile-based matching, schedule optimization, and real-time collaboration into a seamless learning ecosystem.**
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Website-0EA5A4?style=for-the-badge)](https://your-vercel-url.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Website-0EA5A4?style=for-the-badge)](https://skill-swap-five-gules.vercel.app/)
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/your-username/SkillSwap)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/RiddhiGopalani/SkillSwap)
 
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
 ![Flask](https://img.shields.io/badge/Backend-Flask-000000?logo=flask&logoColor=white)
