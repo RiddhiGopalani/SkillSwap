@@ -49,4 +49,13 @@ def create_app(config_class=Config):
     from app.sockets import register_socket_events
     register_socket_events(socketio)
 
+    # Health check route
+    @flask_app.route("/")
+    def home():
+        return {
+            "status": "running",
+            "project": "SkillSwap Backend",
+            "message": "Backend deployed successfully 🚀"
+        }
+
     return flask_app

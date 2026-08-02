@@ -18,5 +18,6 @@ class Config:
     db_pass = os.environ.get('DB_PASSWORD') or 'root123'
     db_name = os.environ.get('DB_NAME') or 'skillswap'
     
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'mysql+pymysql://{db_user}:{db_pass}@{db_host}/{db_name}'
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or \
+    f"mysql+pymysql://{db_user}:{db_pass}@{db_host}:4000/{db_name}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
