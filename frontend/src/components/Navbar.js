@@ -23,6 +23,25 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      <div className="flex items-center gap-3">
+
+        <img
+        src={logo}
+        alt="SkillSwap"
+        className="h-10 w-auto object-contain"
+      />
+
+        <div>
+        <h1 className="text-2xl font-bold text-teal-600">
+            SkillSwap
+        </h1>
+
+        <p className="text-xs text-gray-500">
+            Learn. Exchange. Grow.
+        </p>
+        </div>
+
+      </div>
     </nav>
   );
 }

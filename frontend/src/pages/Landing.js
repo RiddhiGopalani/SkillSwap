@@ -133,6 +133,15 @@ function Landing() {
         </div>
       </div>
 
+      <div className="flex flex-col items-center mb-8">
+
+      <img
+        src={logo}
+        alt="SkillSwap Logo"
+        className="w-56 h-auto object-contain"
+       />
+
+</div>
       {/* REVIEWS */}
       <div className="section-soft" style={{ paddingTop: "120px" }}>
         <h2 style={{ textAlign: "center", marginBottom: "60px", fontSize: "2.5rem" }} className="text-gradient-1">Trusted by students everywhere</h2>
