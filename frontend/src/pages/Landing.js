@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, Star, ArrowRight, Heart, Sparkles, MessageCircle, Map } from "lucide-react";
-
+import logo from "../assets/skillswap_logo.png";
 function Landing() {
   const navigate = useNavigate();
 

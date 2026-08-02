@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { Sun, Moon, Sparkles } from "lucide-react";
+import logo from "../assets/skillswap_logo.png";
 
 export default function Navbar() {
   const { theme, toggleTheme } = useContext(AppContext);
