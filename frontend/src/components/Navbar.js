@@ -24,13 +24,18 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-
+      
+      <div className="flex items-center gap-8 ml-6">
         <img
-        src={logo}
+        src="/skillswap_logo.png"
         alt="SkillSwap"
-        className="h-10 w-auto object-contain"
-      />
+        className="h-10 w-10 object-contain mr-3"
+        />
+
+        <span className="text-3xl font-bold text-[#0E9AA7]">
+        SkillSwap
+        </span>
+      </div>
 
         <div>
         <h1 className="text-2xl font-bold text-teal-600">

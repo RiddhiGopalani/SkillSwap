@@ -133,15 +133,6 @@ function Landing() {
         </div>
       </div>
 
-      <div className="flex flex-col items-center mb-8">
-
-      <img
-        src={logo}
-        alt="SkillSwap Logo"
-        className="w-56 h-auto object-contain"
-       />
-
-</div>
       {/* REVIEWS */}
       <div className="section-soft" style={{ paddingTop: "120px" }}>
         <h2 style={{ textAlign: "center", marginBottom: "60px", fontSize: "2.5rem" }} className="text-gradient-1">Trusted by students everywhere</h2>
@@ -190,11 +181,77 @@ function Landing() {
         </div>
       </div>
       
-      {/* Footer */}
-      <footer style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)", borderTop: "1px solid var(--border-color)", background: "var(--bg-card)" }}>
-        <p style={{ fontWeight: "600", marginBottom: "8px" }}>SkillSwap Platform</p>
-        <p style={{ fontSize: "0.9rem" }}>A safe space for student learning. © 2026</p>
-      </footer>
+      {/* Footer */}  
+      <footer
+        style={{
+       textAlign: "center",
+      padding: "70px 20px 40px",
+      borderTop: "1px solid var(--border-color)",
+      background: "var(--bg-card)"
+         }}
+>
+
+  <img
+    src="/skillswap_logo.png"
+    alt="SkillSwap"
+    style={{
+      width: "110px",
+      marginBottom: "18px",
+      objectFit: "contain"
+    }}
+  />
+
+  <h3
+    style={{
+      fontSize: "2rem",
+      fontWeight: "700",
+      color: "#0299df",
+      marginBottom: "8px"
+    }}
+  >
+    SkillSwap
+  </h3>
+
+  <p
+    style={{
+      color: "var(--text-muted)",
+      fontSize: "1rem",
+      marginBottom: "28px"
+    }}
+  >
+    Learn. Exchange. Grow.
+  </p>
+
+  <div
+    style={{
+      width: "80px",
+      height: "3px",
+      margin: "0 auto 28px",
+      borderRadius: "999px",
+      background: "linear-gradient(90deg,#0299df,#afadfe)"
+    }}
+  />
+
+  <p
+    style={{
+      color: "var(--text-muted)",
+      fontSize: "0.9rem"
+    }}
+  >
+    Built for students who learn better together.
+  </p>
+
+  <p
+    style={{
+      marginTop: "10px",
+      color: "var(--text-muted)",
+      fontSize: "0.85rem"
+    }}
+  >
+    © 2026 SkillSwap
+  </p>
+
+</footer>
     </div>
   );
 }
